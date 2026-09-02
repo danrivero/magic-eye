@@ -16,8 +16,9 @@ def solve_magic_eye(path, output_path="solved.png", beginning_buffer=15):
     # find offset with lowest difference
     for i in range(int(3*width/4)):
         offset += 1
-        shifted_arr = np.roll(base_arr, shift=-offset, axis=1)
-        mae = np.mean(np.abs(base_arr - shifted_arr))
+        left_slice = base_arr[:, : width - offset]
+        right_slice = base_arr[:, offset:]
+        mae = np.mean(np.abs(left_slice - right_slice))
         if offset > beginning_buffer and mae < low_diff:
             low_diff = mae
             low_offset = offset
