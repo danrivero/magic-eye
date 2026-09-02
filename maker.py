@@ -1,6 +1,28 @@
 from PIL import Image, ImageOps, ImageDraw
 import numpy as np
 
+def high_contrast_strip(height, pattern_width, block_size=3):
+    low_h = height // block_size
+    low_w = pattern_width // block_size
+    colors = np.array([
+        [0, 0, 0], #black
+        [255, 255, 255], #white
+        [255, 0, 0], #red
+        [0, 255, 0], #green
+        [0, 0, 255], #blue
+        [255, 255, 0] #yellow
+    ], dtype=np.uint8,
+    )
+    indices = np.random.randint(0, len(colors), size=(low_h, low_w))
+    small_strip = colors[indices]
+
+    strip_img = Image.fromarray(small_strip)
+    full_strip = strip_img.resize(
+        (pattern_width, height), resample=Image.Resampling.NEAREST
+    )
+
+    return np.array(full_strip)
+
 def make_magic_eye(
     path, 
     pattern_path=None, 
@@ -25,12 +47,15 @@ def make_magic_eye(
         print("FATAL ERROR! Dimensions too small!")
         return
 
+
+    # paste image on canvas
     canvas = Image.new("L", (image_width, image_height), color=0)
 
     paste_x = (image_width - width) // 2
     paste_y = (image_height - height) // 2
     canvas.paste(base, (paste_x, paste_y))
     base = canvas
+
 
     if popout == False:
         base = ImageOps.invert(base)
@@ -40,12 +65,13 @@ def make_magic_eye(
     output_arr = np.zeros((image_height, image_width, 3), dtype=np.uint8)
 
     if pattern_path:
+        # use custom pattern
         return
     else:
-        output_arr[:, :pattern_width] = np.random.randint(
-            0, 256, (image_height, pattern_width, 3), dtype=np.uint8
-        )
+        # generate high_contrast noise
+        output_arr[:, :pattern_width] = high_contrast_strip(image_height, pattern_width, block_size=3)
 
+    # continue generating strips
     for y in range(image_height):
         for x in range(pattern_width, image_width):
             d = base_arr[y, x]
